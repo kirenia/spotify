@@ -1,5 +1,6 @@
 import { Router } from "express";
 import crypto from "node:crypto";
+import { Token } from "../models/Token.js";
 
 const router = Router();
 
@@ -75,8 +76,26 @@ router.get("/callback", async (req, res) => {
         .json({ error: data.error_description || data.error });
     }
 
-    // we got tokens yayy!!
-    console.log(`Spotify token received, expires in ${data.expires_in}s`);
+    // spotify gives seconds until expiry, turn that into an actual date
+    const expiresAt = new Date(Date.now() + data.expires_in * 1000);
+
+    // only ever keep one token, update it if it's already there
+    const existing = await Token.findOne();
+    if (existing) {
+      await existing.update({
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        expiresAt,
+      });
+    } else {
+      await Token.create({
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        expiresAt,
+      });
+    }
+
+    console.log(`token saved, good until ${expiresAt.toLocaleTimeString()}`);
 
     // send the user back to the frontend
     res.redirect(process.env.CLIENT_URL);
