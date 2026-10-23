@@ -106,4 +106,11 @@ router.get("/callback", async (req, res) => {
   }
 });
 
+// tell the frontend if we need to show the login screen
+router.get("/status", async (req, res) => {
+  const token = await Token.findOne();
+  const loggedIn = Boolean(token && token.expiresAt > new Date());
+  res.json({ loggedIn });
+});
+
 export default router;
