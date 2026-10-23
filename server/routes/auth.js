@@ -1,6 +1,7 @@
 import { Router } from "express";
 import crypto from "node:crypto";
 import { Token } from "../models/Token.js";
+import { getValidToken } from "../services/spotifyToken.js";
 
 const router = Router();
 
@@ -106,11 +107,10 @@ router.get("/callback", async (req, res) => {
   }
 });
 
-// tell the frontend if we need to show the login screen
+// tells the frontend if we need to show the login screen
 router.get("/status", async (req, res) => {
-  const token = await Token.findOne();
-  const loggedIn = Boolean(token && token.expiresAt > new Date());
-  res.json({ loggedIn });
+  const token = await getValidToken();
+  res.json({ loggedIn: Boolean(token) });
 });
 
 export default router;
