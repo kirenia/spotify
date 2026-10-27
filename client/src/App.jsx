@@ -1,9 +1,14 @@
+import Header from "./components/Header";
+import Login from "./components/Login";
+
 function App() {
   return (
-    <main>
-      <h1>Spotify Search</h1>
-      <p>Frontend is running.</p>
-    </main>
+    <>
+      <Header />
+      <main>
+        <Login />
+      </main>
+    </>
   );
 }
 
