@@ -2,6 +2,7 @@ import { getValidToken } from "../services/spotifyToken.js";
 
 // blocks any route that needs spotify if we don't have a good token
 export async function requireToken(req, res, next) {
+  // READ - get a good token (refreshes it if it expired)
   const token = await getValidToken();
 
   // no token or refresh failed, go log in

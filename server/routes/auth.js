@@ -8,6 +8,7 @@ const router = Router();
 // states we've handed out, so the callback can check them
 export const pendingStates = new Set();
 
+// GET /auth/login - sends the user to spotify to log in
 router.get("/login", (req, res) => {
   // random string so nobody can fake the callback
   const state = crypto.randomBytes(16).toString("hex");
@@ -25,6 +26,7 @@ router.get("/login", (req, res) => {
   res.redirect(`https://accounts.spotify.com/authorize?${params}`);
 });
 
+// GET /auth/callback - spotify sends the user back here after login
 router.get("/callback", async (req, res) => {
   // spotify sends us back here with a code (or an error)
   const { code, state, error } = req.query;
@@ -54,7 +56,7 @@ router.get("/callback", async (req, res) => {
   ).toString("base64");
 
   try {
-    // trade the code for real tokens
+    // POST to spotify - trade the code for real tokens
     const response = await fetch("https://accounts.spotify.com/api/token", {
       method: "POST",
       headers: {
@@ -80,15 +82,17 @@ router.get("/callback", async (req, res) => {
     // spotify gives seconds until expiry, turn that into an actual date
     const expiresAt = new Date(Date.now() + data.expires_in * 1000);
 
-    // only ever keep one token, update it if it's already there
+    // READ - only ever keep one token, see if one's already there
     const existing = await Token.findOne();
     if (existing) {
+      // UPDATE - swap in the new tokens
       await existing.update({
         accessToken: data.access_token,
         refreshToken: data.refresh_token,
         expiresAt,
       });
     } else {
+      // CREATE - first login, save a new row
       await Token.create({
         accessToken: data.access_token,
         refreshToken: data.refresh_token,
@@ -107,7 +111,7 @@ router.get("/callback", async (req, res) => {
   }
 });
 
-// tells the frontend if we need to show the login screen
+// GET /auth/status - tells the frontend if we need to show the login screen
 router.get("/status", async (req, res) => {
   const token = await getValidToken();
   res.json({ loggedIn: Boolean(token) });
