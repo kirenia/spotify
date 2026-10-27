@@ -4,6 +4,7 @@ import { Token } from "../models/Token.js";
 const BUFFER_MS = 60 * 1000;
 
 export async function getValidToken() {
+  // READ - grab the saved token
   const token = await Token.findOne();
 
   // never logged in
@@ -12,7 +13,7 @@ export async function getValidToken() {
   // still good, use it as is
   if (token.expiresAt.getTime() - BUFFER_MS > Date.now()) return token;
 
-  // expired, trade the refresh token for a new one
+  // POST to spotify - expired, trade the refresh token for a new one
   const credentials = Buffer.from(
     `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`,
   ).toString("base64");
@@ -37,7 +38,7 @@ export async function getValidToken() {
     return null;
   }
 
-  // save the new one bc spotify doesn't always send a new refresh token
+  // UPDATE - save the new one bc spotify doesn't always send a new refresh token
   await token.update({
     accessToken: data.access_token,
     refreshToken: data.refresh_token || token.refreshToken,
